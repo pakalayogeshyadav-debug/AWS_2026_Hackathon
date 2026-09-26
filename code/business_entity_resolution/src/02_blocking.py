@@ -1,15 +1,21 @@
 import duckdb
 import argparse
 import time
+import os
 
 def generate_blocks(source1_path, source2_path, output_path):
-    print(f"Starting DuckDB blocking phase...")
+    print(f"Starting ultra-safe DuckDB blocking phase...")
     start_time = time.time()
     
-    # Connect to an in-memory DuckDB instance
-    con = duckdb.connect(database=':memory:')
+    # Use a physical file instead of :memory: to prevent RAM overflow
+    db_path = 'temp_hackathon.db'
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        
+    con = duckdb.connect(database=db_path)
+    con.execute("PRAGMA memory_limit='1GB'") 
     
-    # Block on phonetic_hash OR address_clean to ensure high recall
+    # Ultra-strict join with a hard limit to guarantee it finishes
     query = f"""
     COPY (
         SELECT 
@@ -21,14 +27,22 @@ def generate_blocks(source1_path, source2_path, output_path):
             s2.business_address as address_2
         FROM read_parquet('{source1_path}') AS s1
         INNER JOIN read_parquet('{source2_path}') AS s2
-        ON (s1.phonetic_hash = s2.phonetic_hash AND s1.phonetic_hash != '')
-        OR (s1.address_clean = s2.address_clean AND s1.address_clean != '')
-    ) TO '{output_path}' (FORMAT PARQUET);
+        ON s1.phonetic_hash = s2.phonetic_hash
+        WHERE s1.phonetic_hash IS NOT NULL 
+          AND s2.phonetic_hash IS NOT NULL
+          AND LENGTH(s1.phonetic_hash) > 2
+        LIMIT 50000
+    ) TO '{output_path}' (HEADER, DELIMITER '\t');
     """
     
     con.execute(query)
+    con.close()
+    
+    # Clean up the temporary database
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        
     print(f"Blocking complete in {time.time() - start_time:.2f} seconds.")
-    print(f"Candidate pairs saved to: {output_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

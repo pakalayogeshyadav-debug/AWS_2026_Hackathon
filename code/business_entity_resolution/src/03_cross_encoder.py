@@ -13,8 +13,8 @@ def generate_features(input_path, output_path):
     
     start_time = time.time()
 
-    # 1. LOAD CANDIDATE PAIRS
-    df = pd.read_parquet(input_path)
+    # 1. LOAD CANDIDATE PAIRS (Changed to read TSV format)
+    df = pd.read_csv(input_path, sep='\t')
     print(f"Candidate pairs loaded: {len(df):,}")
 
     # 2. VECTORIZED TEXT CLEANING (Massive speed boost over .apply)
@@ -74,7 +74,9 @@ def generate_features(input_path, output_path):
     ]
 
     result = df[output_columns]
-    result.to_parquet(output_path, index=False)
+    
+    # Changed to save as TSV format for hackathon compliance
+    result.to_csv(output_path, sep='\t', index=False)
 
     elapsed = time.time() - start_time
     print(f"\nFeature engineering completed in {elapsed:.2f} seconds.")
