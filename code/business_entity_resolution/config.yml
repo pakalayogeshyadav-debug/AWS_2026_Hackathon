@@ -1,0 +1,20 @@
+project:
+  name: "State_Zero_Entity_Resolution"
+  version: "1.0.0"
+
+paths:
+  raw_data_source1: "/home/sagemaker-user/shared/State_Zero_submission/data/raw/student_resource/dataset/test/test_source1_cleaned.parquet"
+  raw_data_source2: "/home/sagemaker-user/shared/State_Zero_submission/data/raw/student_resource/dataset/test/test_source2_cleaned.parquet"
+  candidate_pairs: "/home/sagemaker-user/shared/State_Zero_submission/code/business_entity_resolution/output/candidate_pairs.tsv"
+  matching_results: "/home/sagemaker-user/shared/State_Zero_submission/code/business_entity_resolution/output/matching_results.tsv"
+  output_dir: "/home/sagemaker-user/shared/State_Zero_submission/code/business_entity_resolution/output"
+
+blocking:
+  memory_limit: "1GB"
+  threads: 1
+  pair_limit: 50000
+
+model:
+  name: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  batch_size: 256
+  match_threshold: 0.75
